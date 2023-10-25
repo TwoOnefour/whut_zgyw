@@ -2,6 +2,11 @@
 老网页了，写起来很简单
 
 # Usage
+需要`requests`库
+
+`pip install requests`
+
+然后直接运行
 
 > python whut_zgyw.py 0122000001012
 
