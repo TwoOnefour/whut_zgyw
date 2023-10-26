@@ -46,12 +46,17 @@ class Zgyw:
         tree = etree.HTML(html._content.decode("utf-8"))
         # session.get("https://view-cache.book118.com" + json.loads(str(tree.xpath("/html/body/div[1]/input[2]")[0].attrib).replace("'", "\""))["value"])
         __VIEWSTATE = tree.xpath("//input[@id='__VIEWSTATE']")[0].attrib["value"]
-        status = self.session.post(f"{url}/index.aspx", data={
-            "ctl00$ContentPlaceHolder1$name": self.username,
-            "ctl00$ContentPlaceHolder1$pwd": self.password,
-            "ctl00$ContentPlaceHolder1$login": "登录",
-            "__VIEWSTATE": __VIEWSTATE
-        })
+        while True:
+            try:
+                status = self.session.post(f"{url}/index.aspx", data={
+                    "ctl00$ContentPlaceHolder1$name": self.username,
+                    "ctl00$ContentPlaceHolder1$pwd": self.password,
+                    "ctl00$ContentPlaceHolder1$login": "登录",
+                    "__VIEWSTATE": __VIEWSTATE
+                })
+                break
+            except requests.exceptions.ConnectionError as e:
+                echo("访问失败，连接重试")
         if len(status.history) != 1:
             echo("账号错误，请修改")
             exit(0)
@@ -62,7 +67,12 @@ class Zgyw:
     def process(self):
         echo("开始学习")
         while True:
-            self.session.get("http://59.69.102.9/zgyw/study/LearningContent.aspx?type=2&id=9&learningid=2500")
+            try:
+                self.session.get("http://59.69.102.9/zgyw/study/LearningContent.aspx?type=2&id=9&learningid=2500")
+            except requests.exceptions.ConnectionError as e:
+                time.sleep(1)
+                echo("访问失败，重试")
+                continue
             result = self.get_learning_time()
             if result is not None:
                 echo(f"当前学习时间为：{result}")
@@ -74,7 +84,10 @@ class Zgyw:
             # self.echo(f"当前学习时间为：{self.get_learning_time()}")
 
     def get_learning_time(self):
-        html = self.session.get("http://59.69.102.9/zgyw/onlineExam/user/usercenter.aspx")
+        try:
+            html = self.session.get("http://59.69.102.9/zgyw/onlineExam/user/usercenter.aspx")
+        except requests.exceptions.ConnectionError as e:
+            return None
         tree = etree.HTML(html._content.decode("utf-8"))
         now_learning_time = tree.xpath("//span[@id='ctl00_ContentPlaceHolder1_lblonlineTime']")[0].text # span id="ctl00_ContentPlaceHolder1_lblonlineTime"
         if now_learning_time is None:
